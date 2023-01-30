@@ -151,7 +151,7 @@ static void bt_a2d_sink_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
             break;
 
         case ESP_A2D_AUDIO_CFG_EVT:
-            ESP_LOGI(TAG, "A2DP audio stream configuration, codec type %d", param->audio_cfg.mcc.type);
+            ESP_LOGI(TAG, "A2DP audio stream configuration, codec type %d (sbc[0]=%x)", param->audio_cfg.mcc.type,param->audio_cfg.mcc.cie.sbc[0]);
             if (param->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
                 int sample_rate = 16000;
                 char oct0 = param->audio_cfg.mcc.cie.sbc[0];
@@ -186,13 +186,13 @@ static void bt_a2d_sink_data_cb(const uint8_t *data, uint32_t len)
             a2dp_data_t send_msg = {0};
             send_msg.data = (uint8_t *) audio_calloc(1, len);
             if (!send_msg.data) {
-                ESP_LOGE(TAG, "No ineffecitive memory to allocate(%d)", __LINE__);
+                ESP_LOGE(TAG, "No ineffecitive memory to allocate(%d): %d", __LINE__,len);
                 return;
             }
             memcpy(send_msg.data, data, len);
             send_msg.size = len;
             send_msg.type = A2DP_TYPE_SINK;
-            if ((!s_aadp_handler.a2dp_queue) || xQueueSend( s_aadp_handler.a2dp_queue, &send_msg, 0)  != pdPASS ) {
+            if ((!s_aadp_handler.a2dp_queue) || xQueueSend( s_aadp_handler.a2dp_queue, &send_msg, portMAX_DELAY)  != pdPASS ) {
                 ESP_LOGW(TAG, "discard a2dp(%p) sink pkt, A2DP_STREAM_QUEUE_SIZE value needs to be expanded", s_aadp_handler.a2dp_queue);
                 audio_free(send_msg.data);
                 send_msg.data = NULL;
@@ -308,6 +308,7 @@ audio_element_handle_t a2dp_stream_init(a2dp_stream_config_t *config)
         // A2DP sink
         s_aadp_handler.stream_type = AUDIO_STREAM_READER;
         cfg.destroy = a2dp_sink_destory;
+        cfg.out_rb_size = 1024;
         el = s_aadp_handler.sink_stream = audio_element_init(&cfg);
 
         esp_a2d_sink_register_data_callback(bt_a2d_sink_data_cb);

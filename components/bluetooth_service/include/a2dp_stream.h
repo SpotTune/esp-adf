@@ -65,7 +65,7 @@ typedef struct {
 #define A2DP_STREAM_TASK_CORE           ( 0 )
 #define A2DP_STREAM_TASK_PRIO           ( 22 )
 #define A2DP_STREAM_TASK_IN_EXT         ( true )
-#define A2DP_STREAM_QUEUE_SIZE          ( 20 )
+#define A2DP_STREAM_QUEUE_SIZE          ( 10 )
 
 /**
  * @brief      Create a handle to an Audio Element to stream data from A2DP to another Element
